@@ -14,14 +14,14 @@ const resultingFrequency = () => frequencies.reduce((a, b) => a + b, initialFreq
 
 const firstFrequencyReachedTwice = () => {
   let currentFrequency = initialFrequency;
-  let reachedFrequencies = [];
+  let reachedFrequencies = {};
   while (true) {
     for (const frequency of frequencies) {
       currentFrequency += frequency;
-      if (reachedFrequencies.indexOf(currentFrequency) !== -1) {
+      if (reachedFrequencies[currentFrequency]) {
         return currentFrequency;
       }
-      reachedFrequencies.push(currentFrequency);
+      reachedFrequencies[currentFrequency] = true;
     }
   }
 };
