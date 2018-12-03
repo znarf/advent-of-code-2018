@@ -28,19 +28,45 @@ const getSquares = entries => {
     for (let x = entry.left; x < entry.left + entry.width; x++) {
       for (let y = entry.top; y < entry.top + entry.height; y++) {
         const squareKey = `${x},${y}`;
-        squares[squareKey] = (squares[squareKey] || 0) + 1;
+        squares[squareKey] = squares[squareKey] || [];
+        squares[squareKey].push(entry.id);
       }
     }
   }
   return squares;
 };
 
-const countOverlappingSquares = squares => Object.values(squares).filter(count => count > 1).length;
+const getOverlappingSquares = squares => Object.values(squares).filter(ids => ids.length > 1);
+
+const getOverlappingIds = squares => {
+  const overlappingSquares = getOverlappingSquares(squares);
+
+  const overlappingIds = {};
+
+  for (const ids of Object.values(overlappingSquares)) {
+    for (const id of ids) {
+      overlappingIds[id] = true;
+    }
+  }
+
+  return Object.keys(overlappingIds).map(Number);
+};
+
+const getNonOverlappingId = (entries, squares) => {
+  const overlappingIds = getOverlappingIds(squares || getSquares(entries));
+
+  for (const entry of entries) {
+    if (overlappingIds.indexOf(entry.id) === -1) {
+      return entry.id;
+    }
+  }
+};
 
 const test = () => {
   const parsedTestEntries = testEntries.map(parseEntry);
-  const squares = getSquares(parsedTestEntries);
-  assert.equal(countOverlappingSquares(squares), 4);
+  const testSquares = getSquares(parsedTestEntries);
+  assert.equal(getOverlappingSquares(testSquares).length, 4);
+  assert.equal(getNonOverlappingId(parsedTestEntries, testSquares), 3);
 };
 
 const run = () => {
@@ -48,7 +74,11 @@ const run = () => {
   const squares = getSquares(parsedEntries);
   console.log(
     'How many square inches of fabric are within two or more claims?',
-    countOverlappingSquares(squares),
+    getOverlappingSquares(squares).length,
+  );
+  console.log(
+    "What is the ID of the only claim that doesn't overlap?",
+    getNonOverlappingId(parsedEntries, squares),
   );
 };
 
