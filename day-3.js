@@ -12,6 +12,10 @@ const entries = fs
 
 const testEntries = ['#1 @ 1,3: 4x4', '#2 @ 3,1: 4x4', '#3 @ 5,5: 2x2'];
 
+const arrayFlatten = array => [].concat(...array);
+
+const arrayUnique = array => [...new Set(array)];
+
 const parseEntry = entry => {
   const match = inputFormat.exec(entry);
   if (match) {
@@ -36,30 +40,17 @@ const getSquares = entries => {
   return squares;
 };
 
-const getOverlappingSquares = squares => Object.values(squares).filter(ids => ids.length > 1);
+const getOverlappingSquares = squares => {
+  return Object.values(squares).filter(ids => ids.length > 1);
+};
 
 const getOverlappingIds = squares => {
-  const overlappingSquares = getOverlappingSquares(squares);
-
-  const overlappingIds = {};
-
-  for (const ids of Object.values(overlappingSquares)) {
-    for (const id of ids) {
-      overlappingIds[id] = true;
-    }
-  }
-
-  return Object.keys(overlappingIds).map(Number);
+  return arrayUnique(arrayFlatten(getOverlappingSquares(squares)));
 };
 
 const getNonOverlappingId = (entries, squares) => {
   const overlappingIds = getOverlappingIds(squares || getSquares(entries));
-
-  for (const entry of entries) {
-    if (overlappingIds.indexOf(entry.id) === -1) {
-      return entry.id;
-    }
-  }
+  return entries.map(entry => entry.id).find(id => !overlappingIds.includes(id));
 };
 
 const test = () => {
