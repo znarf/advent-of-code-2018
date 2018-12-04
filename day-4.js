@@ -58,9 +58,14 @@ const getMostAsleepGuard = parsedEntries => {
   );
 };
 
-const getMostAsleepMinuteForGuard = (parsedEntries, guard) => {
-  const guardsAsleepTimes = getGuardsAsleepTimes(parsedEntries);
+const getMostAsleepMinuteForGuard = (parsedEntries, guard, guardsAsleepTimes) => {
+  guardsAsleepTimes = guardsAsleepTimes || getGuardsAsleepTimes(parsedEntries);
+
   const singleGuardAsleepTimes = guardsAsleepTimes[guard];
+
+  if (singleGuardAsleepTimes.times.length === 0) {
+    return { guard, minute: 0, total: 0 };
+  }
 
   const countMinutes = {};
   for (const time of singleGuardAsleepTimes.times) {
@@ -70,24 +75,62 @@ const getMostAsleepMinuteForGuard = (parsedEntries, guard) => {
     }
   }
 
-  return Object.keys(countMinutes).reduce((a, b) => (countMinutes[a] > countMinutes[b] ? a : b));
+  const mostAsleepMinuteForGuard = Object.entries(countMinutes)
+    .map(entry => ({ minute: Number(entry[0]), total: entry[1] }))
+    .sort((a, b) => b.total - a.total)
+    .shift();
+
+  return mostAsleepMinuteForGuard;
+};
+
+const getMostAsleepGuardOnSpecificMinute = parsedEntries => {
+  const guardsAsleepTimes = getGuardsAsleepTimes(parsedEntries);
+
+  const guardsMostAsleepMinutes = Object.keys(guardsAsleepTimes).map(guard => {
+    guard = Number(guard);
+    const { minute, total } = getMostAsleepMinuteForGuard(parsedEntries, guard, guardsAsleepTimes);
+    return { guard, minute, total };
+  });
+
+  return guardsMostAsleepMinutes.sort((a, b) => b.total - a.total).shift();
 };
 
 const test = () => {
   const parsedTestEntries = testEntries.map(parseEntry);
-  assert.equal(getMostAsleepGuard(parsedTestEntries), 10);
-  assert.equal(getMostAsleepMinuteForGuard(parsedTestEntries, 10), 24);
+  // Part one
+  const mostAsleepGuard = getMostAsleepGuard(parsedTestEntries);
+  assert.equal(mostAsleepGuard, 10);
+  const mostAsleepMinuteForGuard = getMostAsleepMinuteForGuard(parsedTestEntries, mostAsleepGuard);
+  assert.equal(mostAsleepMinuteForGuard.minute, 24);
+  // Part two
+  const mostAsleepGuardOnSpecificMinute = getMostAsleepGuardOnSpecificMinute(parsedTestEntries);
+  assert.equal(mostAsleepGuardOnSpecificMinute.guard, 99);
+  assert.equal(mostAsleepGuardOnSpecificMinute.minute, 45);
 };
 
 const run = () => {
   const parsedEntries = entries.map(parseEntry);
+  // Part one
   const mostAsleepGuard = getMostAsleepGuard(parsedEntries);
-  const mostAsleepMinuteForGuard = getMostAsleepMinuteForGuard(parsedEntries, mostAsleepGuard);
   console.log('Find the guard that has the most minutes asleep.', mostAsleepGuard);
-  console.log('What minute does that guard spend asleep the most?', mostAsleepMinuteForGuard);
+  const mostAsleepMinuteForGuard = getMostAsleepMinuteForGuard(parsedEntries, mostAsleepGuard);
+  console.log(
+    'What minute does that guard spend asleep the most?',
+    mostAsleepMinuteForGuard.minute,
+  );
   console.log(
     'What is the ID of the guard you chose multiplied by the minute you chose?',
-    mostAsleepGuard * mostAsleepMinuteForGuard,
+    mostAsleepGuard * mostAsleepMinuteForGuard.minute,
+  );
+  // Part two
+  const mostAsleepGuardOnSpecificMinute = getMostAsleepGuardOnSpecificMinute(parsedEntries);
+  console.log(
+    'Of all guards, which guard is most frequently asleep on the same minute?',
+    mostAsleepGuardOnSpecificMinute,
+  );
+  console.log(
+    'What is the ID of the guard you chose multiplied by the minute you chose?',
+    mostAsleepGuardOnSpecificMinute.guard * mostAsleepGuardOnSpecificMinute.minute,
   );
 };
 
