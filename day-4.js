@@ -26,69 +26,64 @@ const parseEntry = entry => {
   }
 };
 
-const getGuardsAsleepTimes = parsedEntries => {
-  const guardsAsleepTimes = {};
-  let currentGuard, fallAsleepMinute;
+const getAsleepGuardStats = parsedEntries => {
+  const guardStatsMap = new Map();
+
+  let guard, fallAsleepMinute;
   for (const entry of parsedEntries) {
     if (entry.label.includes('begins shift')) {
-      currentGuard = Number(
-        entry.label
-          .replace('begins shift', '')
-          .replace('Guard #', '')
-          .trim(),
-      );
-      guardsAsleepTimes[currentGuard] = guardsAsleepTimes[currentGuard] || { total: 0, times: [] };
+      guard = entry.label
+        .replace('begins shift', '')
+        .replace('Guard #', '')
+        .trim();
     }
     if (entry.label === 'falls asleep') {
       fallAsleepMinute = entry.minute;
     }
     if (entry.label === 'wakes up') {
-      guardsAsleepTimes[currentGuard].total += entry.minute - fallAsleepMinute;
-      guardsAsleepTimes[currentGuard].times.push({ start: fallAsleepMinute, end: entry.minute });
+      guardStatsMap[guard] = guardStatsMap[guard] || { total: 0, times: [] };
+      guardStatsMap[guard].total += entry.minute - fallAsleepMinute;
+      guardStatsMap[guard].times.push({ start: fallAsleepMinute, end: entry.minute });
       fallAsleepMinute = null;
     }
   }
-  return guardsAsleepTimes;
+
+  return Object.entries(guardStatsMap).map(([key, value]) => ({
+    guard: Number(key),
+    ...value,
+  }));
 };
 
 const getMostAsleepGuard = parsedEntries => {
-  const guardsAsleepTimes = getGuardsAsleepTimes(parsedEntries);
-  return Object.keys(guardsAsleepTimes).reduce((a, b) =>
-    guardsAsleepTimes[a].total > guardsAsleepTimes[b].total ? a : b,
-  );
+  const asleepGuardStats = getAsleepGuardStats(parsedEntries);
+  const mostAsleepEntry = asleepGuardStats.sort((a, b) => b.total - a.total).shift();
+  return mostAsleepEntry.guard;
 };
 
-const getMostAsleepMinuteForGuard = (parsedEntries, guard, guardsAsleepTimes) => {
-  guardsAsleepTimes = guardsAsleepTimes || getGuardsAsleepTimes(parsedEntries);
+const getMostAsleepMinuteForGuard = (parsedEntries, guard, asleepGuardStats) => {
+  asleepGuardStats = asleepGuardStats || getAsleepGuardStats(parsedEntries);
 
-  const singleGuardAsleepTimes = guardsAsleepTimes[guard];
+  const asleepSingleGuardStats = asleepGuardStats.find(entry => entry.guard === guard);
 
-  if (singleGuardAsleepTimes.times.length === 0) {
-    return { guard, minute: 0, total: 0 };
-  }
-
-  const countMinutes = {};
-  for (const time of singleGuardAsleepTimes.times) {
+  const countMinutesMap = new Map();
+  for (const time of asleepSingleGuardStats.times) {
     for (let i = time.start; i < time.end; i++) {
-      countMinutes[i] = countMinutes[i] || 0;
-      countMinutes[i]++;
+      countMinutesMap[i] = countMinutesMap[i] || 0;
+      countMinutesMap[i]++;
     }
   }
 
-  const mostAsleepMinuteForGuard = Object.entries(countMinutes)
-    .map(entry => ({ minute: Number(entry[0]), total: entry[1] }))
+  return Object.entries(countMinutesMap)
+    .map(([key, value]) => ({ minute: Number(key), total: value }))
     .sort((a, b) => b.total - a.total)
     .shift();
-
-  return mostAsleepMinuteForGuard;
 };
 
 const getMostAsleepGuardOnSpecificMinute = parsedEntries => {
-  const guardsAsleepTimes = getGuardsAsleepTimes(parsedEntries);
+  const asleepGuardStats = getAsleepGuardStats(parsedEntries);
 
-  const guardsMostAsleepMinutes = Object.keys(guardsAsleepTimes).map(guard => {
-    guard = Number(guard);
-    const { minute, total } = getMostAsleepMinuteForGuard(parsedEntries, guard, guardsAsleepTimes);
+  const guardsMostAsleepMinutes = asleepGuardStats.map(({ guard }) => {
+    const { minute, total } = getMostAsleepMinuteForGuard(parsedEntries, guard, asleepGuardStats);
     return { guard, minute, total };
   });
 
@@ -124,10 +119,6 @@ const run = () => {
   );
   // Part two
   const mostAsleepGuardOnSpecificMinute = getMostAsleepGuardOnSpecificMinute(parsedEntries);
-  console.log(
-    'Of all guards, which guard is most frequently asleep on the same minute?',
-    mostAsleepGuardOnSpecificMinute,
-  );
   console.log(
     'What is the ID of the guard you chose multiplied by the minute you chose?',
     mostAsleepGuardOnSpecificMinute.guard * mostAsleepGuardOnSpecificMinute.minute,
