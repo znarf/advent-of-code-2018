@@ -7,6 +7,8 @@ const input = fs.readFileSync(inputFilename, 'utf8').trim();
 
 const testInput = 'dabAcCaCBAcCcaDA';
 
+const alphabet = 'abcdefghijklmnopqrstuvwxyz';
+
 const reactionOccurs = (a, b) => a.toLowerCase() === b.toLowerCase() && a !== b;
 
 const processReaction = string => {
@@ -29,11 +31,24 @@ const processReactions = string => {
   }
 };
 
+const findShortestReaction = string => {
+  return alphabet
+    .split('')
+    .map(char => string.replace(new RegExp(char, 'ig'), ''))
+    .map(processReactions)
+    .sort((a, b) => a.length - b.length)
+    .shift();
+};
+
 const test = () => {
   const processedString = processReactions(testInput);
   // Part one
   assert.equal(processedString, 'dabCBAcaDA');
   assert.equal(processedString.length, 10);
+  // Part two
+  const shortestReaction = findShortestReaction(testInput);
+  assert.equal(shortestReaction, 'daDA');
+  assert.equal(shortestReaction.length, 4);
 };
 
 const run = () => {
@@ -42,6 +57,12 @@ const run = () => {
   console.log(
     'How many units remain after fully reacting the polymer you scanned?',
     processedString.length,
+  );
+  // Part two
+  const shortestReaction = findShortestReaction(input);
+  console.log(
+    'What is the length of the shortest polymer you can produce?',
+    shortestReaction.length,
   );
 };
 
