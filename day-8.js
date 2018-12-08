@@ -81,12 +81,24 @@ const extractNodesFromStack = (stack, childCount = 1, nodeIndex = 0) => {
   return nodes;
 };
 
+const getValueOfNode = node => {
+  if (!node.childs) {
+    return sum(node.metadata);
+  }
+  const values = node.metadata.map(index =>
+    index > 0 && node.childs[index - 1] ? getValueOfNode(node.childs[index - 1]) : 0,
+  );
+  return sum(values);
+};
+
 const test = () => {
   const stack = testInput.slice(0);
   const tree = extractNodesFromStack(stack);
   assert.deepStrictEqual(tree, testTree);
   const metadata = getMetadataFromNode(tree[0]);
   assert.strictEqual(sum(metadata), 138);
+  const value = getValueOfNode(tree[0]);
+  assert.strictEqual(value, 66);
 };
 
 const run = () => {
@@ -94,6 +106,8 @@ const run = () => {
   const tree = extractNodesFromStack(stack);
   const metadata = getMetadataFromNode(tree[0]);
   console.log('What is the sum of all metadata entries?', sum(metadata));
+  const value = getValueOfNode(tree[0]);
+  console.log('What is the value of the root node?', value);
 };
 
 test();
