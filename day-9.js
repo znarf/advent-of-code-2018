@@ -21,7 +21,7 @@ const getNextIndex = (marbles, index, step = 1, clockWise = true) => {
   return index;
 };
 
-const playMarble = (playersCount, marbleMax = 10000) => {
+const playMarble = (playersCount, marbleMax) => {
   const scores = {};
   const marbles = [0];
   let marbleNumber = 0;
@@ -117,8 +117,10 @@ const test = () => {
 };
 
 const run = () => {
-  const result = playMarble(479, 71035);
-  console.log("What is the winning Elf's score?", maxScore(result.scores));
+  const partOneResult = playMarble(479, 71035);
+  console.log("What is the winning Elf's score?", maxScore(partOneResult.scores));
+  const partTwoResult = playMarble(479, 71035 * 100);
+  console.log("What is the winning Elf's score?", maxScore(partTwoResult.scores));
 };
 
 test();
