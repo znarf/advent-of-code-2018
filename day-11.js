@@ -17,37 +17,48 @@ const powerLevelForPoint = (x, y, serialNumber) => {
   return powerLevel;
 };
 
-const prepareGrid = (serialNumber, size = 300) => {
-  const grid = {};
+const prepareGrid = (serialNumber, gridSize = 300) => {
+  const grid = [];
 
-  for (let y = 1; y <= size; y++) {
-    for (let x = 1; x <= size; x++) {
-      grid[y] = grid[y] || {};
-      grid[y][x] = powerLevelForPoint(x, y, serialNumber);
+  for (let y = 0; y < gridSize; y++) {
+    const line = [];
+    for (let x = 0; x < gridSize; x++) {
+      line.push(powerLevelForPoint(x + 1, y + 1, serialNumber));
     }
+    grid.push(line);
   }
 
   return grid;
 };
 
-const largestSquare = (grid, size = 300) => {
+const largestSquare = (grid, gridSize = 300, squareSize = 3) => {
   let max = { totalPower: 0 };
-  for (let x = 1; x <= size; x++) {
-    for (let y = 1; y <= size; y++) {
+  for (let x = 0; x < gridSize; x++) {
+    for (let y = 0; y < gridSize; y++) {
       let totalPower = 0;
-      for (let n = y; n < y + 3 && n <= size; n++) {
-        for (let p = x; p < x + 3 && p <= size; p++) {
-          if (grid[n] && grid[n][p]) {
-            totalPower += grid[n][p];
-          }
+      for (let n = y; n < y + squareSize && n < gridSize; n++) {
+        for (let p = x; p < x + squareSize && p < gridSize; p++) {
+          totalPower += grid[n][p];
         }
       }
       if (totalPower > max.totalPower) {
-        max = { totalPower, x, y };
+        max = { totalPower, x: x + 1, y: y + 1 };
       }
     }
   }
   return max;
+};
+
+const largestSquareForAnySize = (grid, gridSize = 300) => {
+  let maxForAnySize = { totalPower: 0 };
+  for (let size = 1; size <= 300; size++) {
+    const max = largestSquare(grid, gridSize, size);
+    console.log({ size, ...max });
+    if (max.totalPower > maxForAnySize.totalPower) {
+      maxForAnySize = { size, ...max };
+    }
+  }
+  return maxForAnySize;
 };
 
 const test = () => {
@@ -57,24 +68,44 @@ const test = () => {
   assert.strictEqual(powerLevelForPoint(101, 153, 71), 4);
 
   const grid18 = prepareGrid(18);
+
   const largest18 = largestSquare(grid18);
   assert.strictEqual(largest18.x, 33);
   assert.strictEqual(largest18.y, 45);
   assert.strictEqual(largest18.totalPower, 29);
 
+  const largestForAnySize18 = largestSquareForAnySize(grid18);
+  assert.strictEqual(largestForAnySize18.x, 90);
+  assert.strictEqual(largestForAnySize18.x, 269);
+  assert.strictEqual(largestForAnySize18.size, 16);
+  assert.strictEqual(largestForAnySize18.totalPower, 113);
+
   const grid42 = prepareGrid(42);
+
   const largest42 = largestSquare(grid42);
   assert.strictEqual(largest42.x, 21);
   assert.strictEqual(largest42.y, 61);
   assert.strictEqual(largest42.totalPower, 30);
+
+  const largestForAnySize42 = largestSquareForAnySize(grid42);
+  assert.strictEqual(largestForAnySize42.x, 232);
+  assert.strictEqual(largestForAnySize42.x, 251);
+  assert.strictEqual(largestForAnySize42.size, 12);
+  assert.strictEqual(largestForAnySize42.totalPower, 119);
 };
 
 const run = () => {
   const grid = prepareGrid(9995);
+  console.log(grid);
   const largest = largestSquare(grid);
   console.log(
     'What is the X,Y coordinate of the top-left fuel cell of the 3x3 square with the largest total power?',
     `${largest.x},${largest.y}`
+  );
+  const largestForAnySize = largestSquareForAnySize(grid);
+  console.log(
+    'What is the X,Y,size identifier of the square with the largest total power?',
+    `${largestForAnySize.x},${largestForAnySize.y},${largestForAnySize.size}`
   );
 };
 
